@@ -1,0 +1,8 @@
+{
+  "metrics": {
+    "doc_recall@5": 0.857,
+    "n": 500,
+    "strategy": "rerank"
+  },
+  "details": []
+}

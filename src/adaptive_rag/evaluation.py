@@ -1,9 +1,17 @@
 """评测：HotpotQA 官方 EM/F1 + 证据召回（Doc Recall）+ 延迟。"""
 import json
+import re
 import string
 import time
 
 from tqdm import tqdm
+
+_CITE_RE = re.compile(r"\[\d+\]")  # 生成答案中的引用标注 [1][2]
+
+
+def strip_citations(text: str) -> str:
+    """评测前剥离引用标记，否则 'Yes [1][2]' 无法匹配 gold 'yes'。"""
+    return _CITE_RE.sub(" ", text)
 
 
 # ---------- HotpotQA 官方归一化与指标（照官方实现，保证可比性） ----------
@@ -65,7 +73,7 @@ def evaluate(pipeline, records: list[dict], n: int | None = None) -> dict:
             print(f"\n[warn] 题目失败: {e}")
             out = {"answer": "", "retrieved": [], "latency_s": 0.0, "route": "error"}
 
-        pred, retrieved_titles = out["answer"], [h.title for h in out["retrieved"]]
+        pred, retrieved_titles = strip_citations(out["answer"]), [h.title for h in out["retrieved"]]
         em, f1 = exact_match(pred, r["answer"]), f1_score(pred, r["answer"])
         rec = doc_recall(retrieved_titles, r["gold_titles"])
 

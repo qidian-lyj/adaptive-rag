@@ -17,6 +17,8 @@ def main():
         if path.name == "comparison.csv":
             continue
         metrics = json.loads(path.read_text(encoding="utf-8"))["metrics"]
+        if "EM" not in metrics:  # 跳过纯检索评测 / 路由分析等非端到端结果
+            continue
         rows.append(metrics)
 
     if not rows:

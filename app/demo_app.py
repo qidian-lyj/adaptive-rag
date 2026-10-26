@@ -61,7 +61,7 @@ def build_pipeline(strategy: str):
 
 
 st.title("🔍 Adaptive-RAG：面向多跳问答的自适应检索增强问答系统")
-st.caption("HotpotQA 语料库 · 4937 篇维基段落 · Naive / Hybrid / Rerank / Adaptive 四种策略可切换对比")
+st.caption("HotpotQA 语料库 · 9,769 篇维基段落 · Naive / Hybrid / Rerank / Adaptive 四种策略可切换对比")
 
 strategy_label = st.radio("策略", list(STRATEGIES.keys()), horizontal=True)
 question = st.text_input(

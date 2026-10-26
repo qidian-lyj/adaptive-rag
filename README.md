@@ -65,18 +65,18 @@ streamlit run app/demo_app.py
 
 **核心结果**（完整版见 REPORT.md）：
 
-端到端（EM / F1，n=200，deepseek-chat）：
+端到端（EM / F1，n=1000，语料 9,769 篇，deepseek-chat）：
 
 | 策略 | EM | F1 | 证据召回 | 延迟 |
 |---|---|---|---|---|
-| Naive RAG | 48.5% | 61.2% | 82.5% | 1.02s |
-| Hybrid RAG | 45.5% | 57.8% | 83.3% | 1.05s |
-| Rerank | 47.0% | 59.2% | 83.0% | 1.55s |
-| **Adaptive（规则路由）** | **54.0%** | **66.9%** | **91.3%** | 1.95s |
-| Adaptive（LLM 路由） | 51.5% | 65.8% | 90.5% | 2.66s |
+| Naive RAG | 50.1% | 63.5% | 86.4% | 0.95s |
+| Hybrid RAG | 49.8% | 62.9% | 85.5% | 0.97s |
+| Rerank | 50.5% | 63.8% | 86.5% | 1.43s |
+| **Adaptive（规则路由）** | 51.8% | 65.8% | **90.5%** | 1.67s |
+| **Adaptive（LLM 路由）** | **51.9%** | **66.2%** | 90.2% | 2.31s |
 
 检索专项（Doc Recall@5，n=500）：Naive **86.8%** > Hybrid(depth5) 85.7% = Rerank 85.7% > Hybrid(depth10) 82.0%（消融见 REPORT §4.2）
-路由器准确率（vs 题型金标准）：规则 78.0%，LLM 77.5%（comparison 100% / bridge 72.9%）
+路由器准确率（vs 题型金标准，n=1000）：LLM 77.3%（comparison 99.5% / bridge 72.0%）≈ 规则 76.8%（59.6% / 80.9%）——错误方向相反，详见 REPORT §4.3
 
 ## 项目结构
 
@@ -104,13 +104,13 @@ adaptive-rag/
 
 ## 简历/文书表述参考
 
-> Built an adaptive retrieval-augmented QA system on HotpotQA (4,937-passage open corpus): designed a complexity-based router that decomposes multi-hop queries, and systematically compared naive/hybrid/rerank/adaptive pipelines with EM, F1 and evidence-recall metrics, including an ablation showing RRF fusion depth non-monotonically affects recall.
+> Built an adaptive retrieval-augmented QA system on HotpotQA (9,769-passage open corpus): designed a complexity-based router that decomposes multi-hop queries, and systematically compared naive/hybrid/rerank/adaptive pipelines with EM, F1 and evidence-recall metrics (5,000+ LLM calls, ≈$1), including ablations showing RRF fusion depth non-monotonically affects recall and that adaptive gains compress as the corpus scales.
 
 ## 待办 / 延伸方向
 
-- [x] 端到端实验（n=200 × 5 配置，见 REPORT §4.4）
+- [x] 端到端实验（n=1000 × 5 配置，见 REPORT §4.4）
 - [x] LLM 路由 vs 规则路由对比（结论：错误方向比准确率更重要，见 REPORT §4.3）
-- [ ] 扩展到全量 500 题（`--n 500`，一条命令的事）
+- [x] 数据规模扩展（500→1000 题 / 语料翻倍，优势收窄的诚实分析见 REPORT §4.4）
 - [ ] RAGAS faithfulness / answer-relevance 评测
-- [ ] 多跳迭代检索（IRCoT 式）——错误分析显示 32% 失败仍源于检索
+- [ ] 多跳迭代检索（IRCoT 式）——错误分析显示 33% 失败仍源于检索
 - [ ] 推送 GitHub

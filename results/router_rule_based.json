@@ -1,16 +1,16 @@
 {
   "router": "RuleBasedRouter",
-  "n": 500,
-  "accuracy": 0.78,
+  "n": 1000,
+  "accuracy": 0.768,
   "per_type": {
-    "comparison": 0.6042,
-    "bridge": 0.8218
+    "comparison": 0.5959,
+    "bridge": 0.8092
   },
   "confusion(gold->pred)": {
-    "simple->simple": 58,
-    "simple->multi_hop": 38,
-    "multi_hop->simple": 72,
-    "multi_hop->multi_hop": 332
+    "simple->simple": 115,
+    "simple->multi_hop": 78,
+    "multi_hop->simple": 154,
+    "multi_hop->multi_hop": 653
   },
   "examples_wrong": [
     {
@@ -43,5 +43,13 @@
       "pred": "multi_hop",
       "type": "comparison"
     }
-  ]
+  ],
+  "llm_router": {
+    "n": 1000,
+    "accuracy": 0.773,
+    "per_type": {
+      "comparison": 0.9948,
+      "bridge": 0.72
+    }
+  }
 }

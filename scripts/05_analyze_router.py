@@ -60,9 +60,42 @@ def main():
     for t, acc in result["per_type"].items():
         print(f"  {t}: {acc:.1%}")
     print(f"混淆矩阵 (gold->pred): {confusion}")
-    print(f"[done] 已保存: {out}")
-    print("LLM 路由版本在拿到 API key 后运行:")
-    print("  python scripts/03_run_eval.py --strategy adaptive --n 50 --router llm --tag llm")
+
+    # LLM 路由器：从已有的 adaptive *_llm 端到端结果中读取 route 字段统计（无需再调 API）
+    llm_files = sorted(RESULTS_DIR.glob("adaptive_*_llm.json"))
+    llm_files = [f for f in llm_files if f.stem.count("_") == 2]  # 排除 _tail 等分段文件
+    if llm_files:
+        det = json.loads(llm_files[-1].read_text(encoding="utf-8")).get("details") or []
+        gold_map = {
+            json.loads(line)["question"]: json.loads(line)["type"]
+            for line in (PROCESSED_DIR / "eval.jsonl").read_text(encoding="utf-8").splitlines()
+        }
+        lc = ln = 0
+        lper: dict[str, list[int]] = {}
+        for d in det:
+            qtype = gold_map.get(d.get("question", ""))
+            g = GOLD_ROUTE.get(qtype)
+            if g is None:
+                continue
+            hit = d.get("route") == g
+            lc += hit
+            ln += 1
+            t = lper.setdefault(qtype, [0, 0])
+            t[0] += hit
+            t[1] += 1
+        if ln:
+            result["llm_router"] = {
+                "n": ln,
+                "accuracy": round(lc / ln, 4),
+                "per_type": {k: round(a / b, 4) for k, (a, b) in lper.items()},
+            }
+            out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+            print("\n===== LLM 路由器 vs 金标准 =====")
+            print(f"总体准确率: {result['llm_router']['accuracy']:.1%}  (n={ln})")
+            for t, acc in result["llm_router"]["per_type"].items():
+                print(f"  {t}: {acc:.1%}")
+
+    print(f"\n[done] 已保存: {out}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+datasets>=2.19.0
+openai>=1.35.0
+sentence-transformers>=3.0.0
+rank-bm25>=0.2.2
+numpy>=1.26
+pandas>=2.0
+matplotlib>=3.8
+tqdm>=4.66
+python-dotenv>=1.0
+
+# Optional: demo UI (install later, Day 13+)
+# streamlit>=1.35
+
+# Optional: RAGAS LLM-judge evaluation (after main experiments work)
+# ragas>=0.1

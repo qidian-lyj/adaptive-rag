@@ -9,6 +9,7 @@ import re
 
 import numpy as np
 from rank_bm25 import BM25Okapi
+from tqdm import tqdm
 
 from .config import EMBED_MODEL, INDEX_DIR
 

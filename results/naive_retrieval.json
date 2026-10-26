@@ -1,0 +1,8 @@
+{
+  "metrics": {
+    "doc_recall@5": 0.868,
+    "n": 500,
+    "strategy": "naive"
+  },
+  "details": []
+}

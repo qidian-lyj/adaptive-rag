@@ -44,11 +44,11 @@ def doc_recall(retrieved_titles: list[str], gold_titles: list[str]) -> float:
 
 
 # ---------- 评测循环 ----------
-def evaluate_retrieval(pipeline, records: list[dict], k: int = 5) -> dict:
+def evaluate_retrieval(retriever, records: list[dict], k: int = 5) -> dict:
     """只测检索质量（零 API 成本），用于 Day 1 验证链路。"""
     recalls = []
     for r in tqdm(records, desc="retrieval eval"):
-        hits = pipeline.retriever.retrieve(r["question"], k=k)
+        hits = retriever.retrieve(r["question"], k=k)
         recalls.append(doc_recall([h.title for h in hits], r["gold_titles"]))
     return {"doc_recall@%d" % k: sum(recalls) / len(recalls), "n": len(records)}
 

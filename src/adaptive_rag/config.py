@@ -18,5 +18,10 @@ TOP_K = 5        # 每轮检索返回的段落数
 RRF_K = 60       # Reciprocal Rank Fusion 平滑常数（经典取值）
 FINAL_K = 8      # 多跳合并证据后的最大段落数
 
+# 检索增强
+HYBRID_CANDIDATES = 5   # hybrid 每路召回候选数（消融实验见 REPORT.md：10 更差，RRF 偏好两路中游项）
+RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"  # 轻量 CrossEncoder，CPU 可跑
+RERANK_CANDIDATES = 20  # rerank 精排前的候选池大小
+
 # 生成
 MAX_CONTEXTS = 8  # 最多带多少段参考资料进 prompt

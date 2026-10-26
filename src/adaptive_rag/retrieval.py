@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .config import RRF_K
+from .config import HYBRID_CANDIDATES, RRF_K
 from .indexing import BM25Index, VectorIndex
 
 
@@ -40,9 +40,13 @@ class Retriever:
         return self._hybrid(query, k)
 
     def _hybrid(self, query: str, k: int) -> list[Retrieved]:
-        """Reciprocal Rank Fusion：对两路排名取 1/(RRF_K + rank) 之和，鲁棒且免调分数量纲。"""
-        v_ids, _ = self.vector_index.search(query, k)
-        b_ids, _ = self.bm25_index.search(query, k)
+        """Reciprocal Rank Fusion：对两路排名取 1/(RRF_K + rank) 之和，鲁棒且免调分数量纲。
+
+        每路先取 HYBRID_CANDIDATES 条再融合截断到 k，避免融合后 top-k 被单路占满。
+        """
+        depth = max(k, HYBRID_CANDIDATES)
+        v_ids, _ = self.vector_index.search(query, depth)
+        b_ids, _ = self.bm25_index.search(query, depth)
         rrf: dict[str, float] = {}
         for ids in (v_ids, b_ids):
             for rank, doc_id in enumerate(ids, start=1):

@@ -43,13 +43,30 @@ class RuleBasedRouter:
 
 
 class LLMRouter:
-    """LLM 路由器（Week 2 升级点：实现它并与规则路由对比）。"""
+    """LLM 路由器：用小模型做 0/2-shot 分类，判断问题是否需要多跳分解。
+
+    对比实验素材：规则路由 vs LLM 路由的「路由准确率」与「下游 EM」。
+    """
+
+    _PROMPT = """You route questions to a retrieval system. Classify each question as:
+- simple: answerable by retrieving ONE relevant paragraph. Two-entity comparisons (e.g. "Who was born first, A or B?") are simple: each fact can be looked up independently.
+- multi_hop: requires CHAINING facts across paragraphs, e.g. "The director of film X was born in which city?" (first find the director of X, then look up the director's birthplace).
+
+Examples:
+Q: Who was born first, Thomas Edison or Nikola Tesla? -> simple
+Q: The novel whose author died in 1861 was adapted into a film directed by whom? -> multi_hop
+Q: Where was the president who signed the law born? -> multi_hop
+Q: Which magazine was started first, Arthur's Magazine or First for Women? -> simple
+
+Q: {question}
+Answer with exactly one word, simple or multi_hop:"""
 
     def __init__(self, client, model: str):
         self.client = client
         self.model = model
 
     def classify(self, question: str) -> str:
-        # TODO(Week 2): 用少量 few-shot 让 LLM 输出 simple / multi_hop，
-        # 并在评测集上统计路由准确率 + 对下游 EM 的影响。
-        raise NotImplementedError("Week 2 待实现")
+        from .generation import _chat
+
+        raw = _chat(self.client, self.model, self._PROMPT.format(question=question)).strip().lower()
+        return "multi_hop" if "multi" in raw else "simple"

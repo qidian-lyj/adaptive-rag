@@ -1,0 +1,47 @@
+{
+  "router": "RuleBasedRouter",
+  "n": 500,
+  "accuracy": 0.78,
+  "per_type": {
+    "comparison": 0.6042,
+    "bridge": 0.8218
+  },
+  "confusion(gold->pred)": {
+    "simple->simple": 58,
+    "simple->multi_hop": 38,
+    "multi_hop->simple": 72,
+    "multi_hop->multi_hop": 332
+  },
+  "examples_wrong": [
+    {
+      "question": "Were Scott Derrickson and Ed Wood of the same nationality?",
+      "gold": "simple",
+      "pred": "multi_hop",
+      "type": "comparison"
+    },
+    {
+      "question": "Are the Laleli Mosque and Esma Sultan Mansion located in the same neighborhood?",
+      "gold": "simple",
+      "pred": "multi_hop",
+      "type": "comparison"
+    },
+    {
+      "question": "Who is older, Annie Morton or Terry Richardson?",
+      "gold": "multi_hop",
+      "pred": "simple",
+      "type": "bridge"
+    },
+    {
+      "question": "Are Local H and For Against both from the United States?",
+      "gold": "simple",
+      "pred": "multi_hop",
+      "type": "comparison"
+    },
+    {
+      "question": "Are Random House Tower and 888 7th Avenue both used for real estate?",
+      "gold": "simple",
+      "pred": "multi_hop",
+      "type": "comparison"
+    }
+  ]
+}

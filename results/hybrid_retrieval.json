@@ -1,6 +1,6 @@
 {
   "metrics": {
-    "doc_recall@5": 0.857,
+    "doc_recall@5": 0.82,
     "n": 500,
     "strategy": "hybrid"
   },

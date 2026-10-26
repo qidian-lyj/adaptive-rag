@@ -1,111 +1,111 @@
 # Adaptive-RAG：面向多跳问答的自适应检索增强问答系统
 
-> 两周冲刺版申研项目。针对多跳（multi-hop）问答场景，实现并对比 **Naive RAG / Hybrid RAG / Adaptive RAG（自适应路由）** 三种策略，用统一的评测框架量化每种设计的收益。
+> 完整的检索增强生成（RAG）对比研究项目：在 HotpotQA 上实现并系统对比 **Naive / Hybrid / Rerank / Adaptive** 四种 RAG 策略，包含统一评测框架、消融实验、错误分析与可交互演示界面。技术细节见 [REPORT.md](REPORT.md)。
 
-## 为什么这个项目有区分度
+## 项目亮点
 
-- 普通 RAG 项目 = "调 API + 跑通 demo"，没有区分度；本项目核心是**对比实验 + 量化结果**。
-- 自适应路由（简单问题单跳检索、复杂问题自动分解多跳检索）源自 Adaptive-RAG (NAACL 2024) 的思路，实现门槛低但故事完整。
-- HotpotQA 是标准学术数据集，EM/F1 指标有公认参照系，结果可直接写进简历。
+- **四策略统一对比**：向量检索、BM25+向量 RRF 融合、CrossEncoder 两阶段精排、按问题复杂度自适应路由（单跳 / 分解多跳）
+- **评测驱动**：EM / F1（HotpotQA 官方口径）+ Doc Recall@5（证据召回）+ 延迟/成本维度，每种改动都有量化收益
+- **零依赖检索实现**：未使用 LangChain 等重框架，分块、索引、RRF 融合、评测全部手写，每一步可见
+- **诚实报告负结果**：如 RRF 候选深度消融发现"加深召回反而降低精度"并给出机理解释（见 REPORT §4.2）
 
 ## 架构
 
 ```mermaid
 flowchart LR
-    Q[问题] --> R{路由器<br/>Router}
-    R -->|simple| A[单跳检索<br/>top-k]
-    R -->|multi_hop| B[问题分解<br/>子问题 x2]
-    B --> C[分别检索 + 合并证据]
+    Q[问题] --> R{路由器<br/>规则 / LLM}
+    R -->|simple| A[单跳检索 top-5]
+    R -->|multi_hop| B[LLM 分解子问题 x2]
+    B --> C[分别检索 + 证据合并重排]
     A --> G[LLM 生成<br/>带引用标注]
     C --> G
-    G --> E[评测<br/>EM / F1 / Doc Recall / 延迟]
+    G --> E[评测 EM / F1<br/>Doc Recall / 延迟]
 ```
-
-## 实验设计
-
-| 策略 | 检索方式 | 说明 |
-|---|---|---|
-| Naive RAG | 向量检索 top-k | 基线 |
-| Hybrid RAG | BM25 + 向量（RRF 融合） | 检索质量改进 |
-| Adaptive RAG | 路由器分流：简单题单跳 / 复杂题分解多跳 | 系统级改进 |
-
-**指标**：EM、F1（HotpotQA 官方指标）、Doc Recall@k（证据召回）、平均延迟。
-**对照组维度**：回答质量 vs 延迟（成本），体现工程思维。
 
 ## 快速开始
 
 ```powershell
-# 1. 创建虚拟环境并安装依赖（Windows，Python 3.10+）
+# 1. 环境（Windows，Python 3.10+）
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
-# 国内网络加速：pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 2. 配置 LLM API（支持 DeepSeek / OpenAI / 本地 Ollama）
-copy .env.example .env   # 然后编辑 .env 填入 API key
+copy .env.example .env   # 编辑 .env 填入 API key
 
-# 3. 准备数据（自动下载 HotpotQA 并构建语料库 + 评测集）
+# 3. 数据与索引（自动下载 HotpotQA；国内建议先设 $env:HF_ENDPOINT='https://hf-mirror.com'）
 python scripts/01_prepare_data.py
-
-# 4. 构建检索索引（无需 API key）
 python scripts/02_build_index.py
 
-# 5. 先零成本验证检索质量（不调用 LLM）
-python scripts/03_run_eval.py --strategy naive --retrieval-only
+# 4. 零成本实验（不需要 API key）
+python scripts/03_run_eval.py --strategy naive --retrieval-only    # 向量检索评测
+python scripts/03_run_eval.py --strategy rerank --retrieval-only   # 两阶段精排评测
+python scripts/05_analyze_router.py                                # 路由器准确率分析
 
-# 6. 跑端到端评测（先用小规模试水）
-python scripts/03_run_eval.py --strategy naive --n 50
-python scripts/03_run_eval.py --strategy hybrid --n 50
-python scripts/03_run_eval.py --strategy adaptive --n 50
+# 5. 端到端评测（需要 API key，成本约 1~3 元）
+python scripts/03_run_eval.py --strategy naive --n 500
+python scripts/03_run_eval.py --strategy adaptive --n 500 --router llm
+python scripts/04_compare.py          # 汇总对比表 + 柱状图
+python scripts/06_error_analysis.py   # 失败 case 归因分析
 
-# 7. 汇总对比 + 出图
-python scripts/04_compare.py
+# 6. 交互演示
+streamlit run app/demo_app.py
 ```
 
-**成本参考**：用 DeepSeek API 跑 500 题，全部实验加起来大约几元人民币；本地 Ollama 则免费。
+**数据集下载失败？** 手动下载 [hotpot_dev_distractor_v1.json](https://hotpotqa.github.io/) 放到 `data/raw/` 即可。
 
-## 两周计划 Checklist
+## 实验设计
 
-### Week 1：打底 + 评测闭环
-- [ ] Day 1–2：跑通"快速开始"全部流程，理解每个模块
-- [ ] Day 3–5：阅读并修改 `src/adaptive_rag/retrieval.py`，尝试调整 top-k / 换 embedding 模型
-- [ ] Day 6–7：拿到 Naive RAG 基线分数，记录到下方结果表
+| 策略 | 检索方式 | 改进维度 |
+|---|---|---|
+| Naive RAG | 向量检索 top-5 | 基线 |
+| Hybrid RAG | BM25 + 向量 RRF 融合 | 检索质量 |
+| Rerank | 向量粗排 20 → CrossEncoder 精排 5 | 检索精度 |
+| Adaptive RAG | 路由器分流：简单题单跳 / 复杂题 LLM 分解多跳 | 系统级质量-成本权衡 |
 
-### Week 2：亮点 + 包装
-- [ ] Day 8–10：升级 `router.py`——把规则路由改成 LLM 路由，并统计路由准确率（好素材！）
-- [ ] Day 11–12：跑全量对比实验（n=300~500），完善 `scripts/04_compare.py` 图表
-- [ ] Day 13–14：打磨 README 结果表、画架构图、写一页 PDF 技术报告
+**核心结果**（完整版见 REPORT.md）：
 
-## 结果（待填）
+| 检索方案 | Doc Recall@5 |
+|---|---|
+| Naive（纯向量） | 86.8% |
+| Hybrid（RRF, depth=5） | 85.7% |
+| Hybrid（RRF, depth=10） | 82.0% |
+| 规则路由器路由准确率 | 78.0%（vs HotpotQA 题型金标准） |
 
-| 策略 | EM | F1 | Doc Recall@5 | 平均延迟 (s) |
-|---|---|---|---|---|
-| Naive RAG | – | – | – | – |
-| Hybrid RAG | – | – | – | – |
-| Adaptive RAG | – | – | – | – |
-
-## 延伸方向（时间富余再做）
-
-- **Rerank**：加 CrossEncoder 重排（`sentence-transformers` 自带），对比检索质量
-- **RAGAS 评测**：补充 faithfulness / answer relevance 等 LLM-as-judge 指标
-- **引用可视化**：Streamlit 演示界面，答案中 [1][2] 可点击跳转原文
-- **错误分析**：抽样 20 个失败 case 分类归因（检索失败 vs 生成失败），报告里非常出彩
-
-## 简历/文书表述参考
-
-> Built an adaptive retrieval-augmented QA system on HotpotQA; designed a complexity-based router that decomposes multi-hop queries, improving F1 by X% over the naive RAG baseline while keeping p50 latency within Y seconds.
+端到端 EM/F1 结果在 `results/` 目录，运行 `python scripts/04_compare.py` 可重新生成对比表和图。
 
 ## 项目结构
 
 ```
 adaptive-rag/
-├── scripts/            # 一条龙脚本：数据 → 索引 → 评测 → 对比
-├── src/adaptive_rag/   # 核心代码（无重框架依赖，检索每一步可见）
-├── data/               # 自动生成（gitignore）
-└── results/            # 实验结果 JSON + 对比图表
+├── app/demo_app.py          # Streamlit 演示界面（四策略切换）
+├── scripts/
+│   ├── 01_prepare_data.py   # 下载 HotpotQA → 语料库 + 评测集
+│   ├── 02_build_index.py    # 向量 + BM25 双索引
+│   ├── 03_run_eval.py       # 统一评测（支持 --retrieval-only / --router llm）
+│   ├── 04_compare.py        # 汇总对比 + 图表
+│   ├── 05_analyze_router.py # 路由器准确率分析
+│   └── 06_error_analysis.py # 失败 case 归因（检索失败 vs 生成失败）
+├── src/adaptive_rag/        # 核心代码
+│   ├── indexing.py          #   向量索引 + BM25
+│   ├── retrieval.py         #   统一检索接口（vector/bm25/hybrid-RRF）
+│   ├── rerank.py            #   CrossEncoder 两阶段精排
+│   ├── router.py            #   规则路由 + LLM 路由
+│   ├── pipeline.py          #   四种 RAG 策略
+│   ├── generation.py        #   OpenAI 兼容 LLM 客户端 + Prompt
+│   └── evaluation.py        #   EM/F1/DocRecall 评测
+├── results/                 # 全部实验结果 JSON + 图表
+└── REPORT.md                # 技术报告（动机/方法/结果/消融/错误分析）
 ```
 
-## 常见问题
+## 简历/文书表述参考
 
-- **数据集下载失败**：手动从 [hotpotqa.github.io](https://hotpotqa.github.io/) 下载 `hotpot_dev_distractor_v1.json`，放到 `data/raw/` 目录即可，脚本会自动识别。
-- **embedding 模型下载慢**：设置镜像 `set HF_ENDPOINT=https://hf-mirror.com` 后再运行。
+> Built an adaptive retrieval-augmented QA system on HotpotQA (4,937-passage open corpus): designed a complexity-based router that decomposes multi-hop queries, and systematically compared naive/hybrid/rerank/adaptive pipelines with EM, F1 and evidence-recall metrics, including an ablation showing RRF fusion depth non-monotonically affects recall.
+
+## 待办 / 延伸方向
+
+- [ ] 端到端全量实验（n=500，需 API key，命令见上）
+- [ ] LLM 路由 vs 规则路由对比（`--router llm`）
+- [ ] RAGAS faithfulness / answer-relevance 评测
+- [ ] 多跳迭代检索（IRCoT 式）
+- [ ] 推送 GitHub + 在 README 贴对比图

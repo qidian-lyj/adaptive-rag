@@ -7,9 +7,7 @@ pandas>=2.0
 matplotlib>=3.8
 tqdm>=4.66
 python-dotenv>=1.0
-
-# Optional: demo UI (install later, Day 13+)
-# streamlit>=1.35
+streamlit>=1.35
 
 # Optional: RAGAS LLM-judge evaluation (after main experiments work)
 # ragas>=0.1

@@ -5,6 +5,7 @@
   python scripts/03_run_eval.py --strategy rerank --retrieval-only     # 重排策略检索评测
   python scripts/03_run_eval.py --strategy naive --n 50                # 端到端小规模试水
   python scripts/03_run_eval.py --strategy adaptive --n 50 --router llm  # LLM 路由
+  python scripts/03_run_eval.py --strategy naive --n 500 --offset 500 --tag tail  # 增量跑第 500~1000 题
 """
 import argparse
 import json
@@ -59,12 +60,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--strategy", required=True, choices=["naive", "hybrid", "rerank", "adaptive"])
     ap.add_argument("--n", type=int, default=50, help="评测题数")
+    ap.add_argument("--offset", type=int, default=0, help="从评测集第 offset 题开始（增量扩实验用）")
     ap.add_argument("--retrieval-only", action="store_true", help="只测检索质量，不调用 LLM（零成本）")
     ap.add_argument("--router", choices=["rule", "llm"], default="rule", help="adaptive 策略的路由器")
     ap.add_argument("--tag", default="", help="结果文件名附加标记（如 rule/llm 路由对比实验）")
     args = ap.parse_args()
 
     records = load_eval_set()
+    records = records[args.offset: args.offset + args.n]
     if args.retrieval_only:
         retriever = build(args.strategy, with_llm=False)
         result = evaluate_retrieval(retriever, records, k=TOP_K)

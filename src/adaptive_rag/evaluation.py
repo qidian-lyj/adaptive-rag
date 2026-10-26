@@ -25,7 +25,8 @@ def normalize_answer(s: str) -> str:
     def remove_punc(text):
         return "".join(ch for ch in text if ch not in string.punctuation)
 
-    return white_space_fix(remove_articles(s.lower()))
+    # HotpotQA 官方口径：小写 -> 去标点 -> 去冠词 -> 空白归一
+    return white_space_fix(remove_articles(remove_punc(s.lower())))
 
 
 def exact_match(pred: str, gold: str) -> int:

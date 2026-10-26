@@ -65,15 +65,18 @@ streamlit run app/demo_app.py
 
 **核心结果**（完整版见 REPORT.md）：
 
-| 检索方案 | Doc Recall@5 |
-|---|---|
-| Naive（纯向量） | 86.8% |
-| Hybrid（RRF, depth=5） | 85.7% |
-| + Rerank（20 选 5） | 85.7% |
-| Hybrid（RRF, depth=10） | 82.0% |
-| 规则路由器路由准确率 | 78.0%（vs HotpotQA 题型金标准） |
+端到端（EM / F1，n=200，deepseek-chat）：
 
-端到端 EM/F1 结果在 `results/` 目录，运行 `python scripts/04_compare.py` 可重新生成对比表和图。
+| 策略 | EM | F1 | 证据召回 | 延迟 |
+|---|---|---|---|---|
+| Naive RAG | 48.5% | 61.2% | 82.5% | 1.02s |
+| Hybrid RAG | 45.5% | 57.8% | 83.3% | 1.05s |
+| Rerank | 47.0% | 59.2% | 83.0% | 1.55s |
+| **Adaptive（规则路由）** | **54.0%** | **66.9%** | **91.3%** | 1.95s |
+| Adaptive（LLM 路由） | 51.5% | 65.8% | 90.5% | 2.66s |
+
+检索专项（Doc Recall@5，n=500）：Naive **86.8%** > Hybrid(depth5) 85.7% = Rerank 85.7% > Hybrid(depth10) 82.0%（消融见 REPORT §4.2）
+路由器准确率（vs 题型金标准）：规则 78.0%，LLM 77.5%（comparison 100% / bridge 72.9%）
 
 ## 项目结构
 
@@ -105,8 +108,9 @@ adaptive-rag/
 
 ## 待办 / 延伸方向
 
-- [ ] 端到端全量实验（n=500，需 API key，命令见上）
-- [ ] LLM 路由 vs 规则路由对比（`--router llm`）
+- [x] 端到端实验（n=200 × 5 配置，见 REPORT §4.4）
+- [x] LLM 路由 vs 规则路由对比（结论：错误方向比准确率更重要，见 REPORT §4.3）
+- [ ] 扩展到全量 500 题（`--n 500`，一条命令的事）
 - [ ] RAGAS faithfulness / answer-relevance 评测
-- [ ] 多跳迭代检索（IRCoT 式）
-- [ ] 推送 GitHub + 在 README 贴对比图
+- [ ] 多跳迭代检索（IRCoT 式）——错误分析显示 32% 失败仍源于检索
+- [ ] 推送 GitHub

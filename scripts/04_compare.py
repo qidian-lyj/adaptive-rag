@@ -16,9 +16,11 @@ def main():
     for path in sorted(RESULTS_DIR.glob("*.json")):
         if path.name == "comparison.csv":
             continue
-        metrics = json.loads(path.read_text(encoding="utf-8"))["metrics"]
-        if "EM" not in metrics:  # 跳过纯检索评测 / 路由分析等非端到端结果
+        data = json.loads(path.read_text(encoding="utf-8"))
+        metrics = data.get("metrics")
+        if not metrics or "EM" not in metrics:  # 跳过纯检索评测 / 路由分析等非端到端结果
             continue
+        metrics["strategy"] = path.stem  # 用文件名做标签（rerank_200 / adaptive_200_llm ...）
         rows.append(metrics)
 
     if not rows:

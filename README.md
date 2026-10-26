@@ -69,6 +69,7 @@ streamlit run app/demo_app.py
 |---|---|
 | Naive（纯向量） | 86.8% |
 | Hybrid（RRF, depth=5） | 85.7% |
+| + Rerank（20 选 5） | 85.7% |
 | Hybrid（RRF, depth=10） | 82.0% |
 | 规则路由器路由准确率 | 78.0%（vs HotpotQA 题型金标准） |
 
